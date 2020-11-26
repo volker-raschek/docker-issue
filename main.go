@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -82,6 +83,10 @@ func main() {
 		})
 	}()
 
+	// start container
+	err = dockerClient.ContainerStart(ctx, containerCreateResp.ID, types.ContainerStartOptions{})
+	ifErr(err)
+
 	// add additional network
 	err = dockerClient.NetworkConnect(ctx, networkIDs[1], containerCreateResp.ID, &network.EndpointSettings{
 		Aliases:   networkNamesAndAliases[networkNames[1]],
@@ -97,9 +102,11 @@ func main() {
 	for i := range containerNetworks {
 		if len(containerNetworks[i].Containers) != 1 {
 			log.Printf("Container %v is not part of network %v", containerCreateResp.ID, containerNetworks[i].ID)
+			log.Printf("Execute `docker inspect %v` you will see in the JSON output, that the container is listed", containerNetworks[i].ID)
 		}
 	}
 
+	time.Sleep(time.Second * 60)
 }
 
 func networkListByNames(ctx context.Context, dockerClient *client.Client, networkNames ...string) ([]types.NetworkResource, error) {
